@@ -67,6 +67,7 @@ pub mod refugio_animales {
         );
 
         mascota.adoptado = !mascota.adoptado;
+        mascota.disponible_adopcion = !mascota.adoptado;
 
         msg!(
             "La mascota {} ahora tiene estado adoptado: {}",
@@ -174,7 +175,15 @@ pub struct AlternarAdopcion<'info> {
     )]
     pub refugio: Account<'info, Refugio>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [
+            b"mascota",
+            refugio.key().as_ref(),
+            mascota.nombre.as_bytes()
+        ],
+        bump
+    )]
     pub mascota: Account<'info, Mascota>,
 }
 
@@ -193,7 +202,16 @@ pub struct EliminarMascota<'info> {
 
     #[account(
         mut,
-        close = owner
+        close = owner,
+        seeds = [
+            b"mascota",
+            refugio.key().as_ref(),
+            mascota.nombre.as_bytes()
+        ],
+        bump
     )]
     pub mascota: Account<'info, Mascota>,
 }
+
+   
+
