@@ -115,7 +115,75 @@ function calcularAlertas() {
   return alertas
 }
 
-// ─── Endpoints ────────────────────────────────────────────────────────────────
+ 
+// ─── CONEXIÓN GEMMA 4 GOOGLE ─────────────────────
+
+async function consultarGemma(mensaje: string) {
+  const apiKey = process.env.GOOGLE_API_KEY
+
+  if (!apiKey) {
+    throw new Error('Falta GOOGLE_API_KEY en .env.local')
+  }
+
+  const contexto = {
+    mascotas: calcularEstadisticas(),
+    lista_mascotas: mascotas,
+    inventario,
+    finanzas: calcularFinanzas(),
+    alertas: calcularAlertas(),
+    donaciones,
+    gastos,
+  }
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: `
+Eres el agente de inteligencia artificial de Refugio Animal Solana.
+
+Analiza los datos del refugio y ayuda a administrar:
+- Mascotas y adopciones.
+- Enfermedades y atención veterinaria.
+- Inventario y alimentos.
+- Donaciones y gastos.
+- Alertas y prioridades.
+
+Nunca inventes información ni tomes decisiones veterinarias.
+
+DATOS DEL REFUGIO:
+${JSON.stringify(contexto, null, 2)}
+
+CONSULTA:
+${mensaje}
+
+Responde en español, con claridad y recomendaciones concretas.
+`
+          }]
+        }]
+      })
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`Error Google API: ${await response.text()}`)
+  }
+
+  const data = await response.json()
+
+  return data.candidates?.[0]?.content?.parts
+    ?.map((part: { text?: string }) => part.text || '')
+    .join('') || 'Sin respuesta de Gemma 4.'
+}
+
+ // ─── Endpoints ────────────────────────────────────────────────────────────────
 
 export async function GET() {
   const stats = calcularEstadisticas()
@@ -179,31 +247,91 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { accion, item, cantidad, donante, wallet, sol, motivo } = await req.json()
+    const {
+      accion, item, cantidad, donante,
+      wallet, sol, motivo, mensaje
+    } = await req.json()
+
+    // CONSULTA REAL A GEMMA 4
+    if (typeof mensaje === 'string' && mensaje.trim()) {
+      const respuesta = await consultarGemma(mensaje)
+
+      return NextResponse.json({
+        exito: true,
+        modelo: 'gemma-4-26b-a4b-it',
+        respuesta
+      })
+    }
 
     if (accion === 'registrar_donacion') {
-      donaciones.push({ fecha: new Date().toISOString(), donante: donante || 'Anónimo', wallet: wallet || 'desconocida', sol: sol || 0.01, motivo: motivo || 'Donación general' })
-      return NextResponse.json({ exito: true, mensaje: `Donación de ${sol} SOL registrada de ${donante}`, finanzas: calcularFinanzas() })
+      donaciones.push({
+        fecha: new Date().toISOString(),
+        donante: donante || 'Anónimo',
+        wallet: wallet || 'desconocida',
+        sol: sol || 0.01,
+        motivo: motivo || 'Donación general'
+      })
+
+      return NextResponse.json({
+        exito: true,
+        finanzas: calcularFinanzas()
+      })
     }
 
     if (accion === 'reabastecer') {
-      if (!inventario[item]) return NextResponse.json({ error: `Item desconocido: ${item}` }, { status: 400 })
+      if (!inventario[item]) {
+        return NextResponse.json(
+          { error: 'Item desconocido' },
+          { status: 400 }
+        )
+      }
+
       const costo = cantidad * inventario[item].costo_sol_por_unidad
       inventario[item].cantidad += cantidad
-      gastos.push({ fecha: new Date().toISOString(), categoria: item, descripcion: `Reabastecimiento: ${cantidad} ${inventario[item].unidad} de ${item}`, sol: costo })
-      return NextResponse.json({ exito: true, mensaje: `✅ ${cantidad} ${inventario[item].unidad} de ${item} reabastecidos. Costo: ${costo.toFixed(4)} SOL`, inventario_actualizado: inventario[item], alertas_activas: calcularAlertas().length })
+
+      gastos.push({
+        fecha: new Date().toISOString(),
+        categoria: item,
+        descripcion: `Reabastecimiento: ${cantidad} ${item}`,
+        sol: costo
+      })
+
+      return NextResponse.json({
+        exito: true,
+        inventario_actualizado: inventario[item]
+      })
     }
 
     if (accion === 'marcar_adoptado') {
       const mascota = mascotas.find(m => m.id === item)
-      if (!mascota) return NextResponse.json({ error: 'Mascota no encontrada' }, { status: 404 })
+
+      if (!mascota) {
+        return NextResponse.json(
+          { error: 'Mascota no encontrada' },
+          { status: 404 }
+        )
+      }
+
       mascota.adoptado = true
-      donaciones.push({ fecha: new Date().toISOString(), donante: donante || 'Adoptante', wallet: wallet || 'desconocida', sol: 0.01, motivo: `Adopción de ${mascota.nombre}` })
-      return NextResponse.json({ exito: true, mensaje: `🐾 ${mascota.nombre} marcada como adoptada. ¡Encontró hogar!`, finanzas: calcularFinanzas() })
+
+      return NextResponse.json({
+        exito: true,
+        mensaje: `${mascota.nombre} marcada como adoptada`
+      })
     }
 
-    return NextResponse.json({ error: 'Acción desconocida. Usa: registrar_donacion | reabastecer | marcar_adoptado' }, { status: 400 })
-  } catch {
-    return NextResponse.json({ error: 'Error procesando solicitud' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Acción desconocida o mensaje vacío' },
+      { status: 400 }
+    )
+
+  } catch (error) {
+    console.error('Error en agente:', error)
+
+    return NextResponse.json({
+      error: error instanceof Error
+        ? error.message
+        : 'Error procesando solicitud'
+    }, { status: 500 })
   }
 }

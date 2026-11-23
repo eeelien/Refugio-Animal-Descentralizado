@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("56XMjeUnV1vDsEwuCVZMv5g9NNBjXxkZTfH3DyvCs351");
+declare_id!("5LKxowtk3ZLgN5ZXQXyu9aD5iNoRBRgHxJeHL1eHAfJP");
 
 #[program]
 pub mod refugio_animales {
