@@ -1,36 +1,38 @@
-# 🐾 Refugio Animal — Solana Program
+# 🐾 Refugio Animal Descentralizado
 
-Programa CRUD desarrollado en **Rust + Anchor** desplegado en Solana Devnet.
+Programa de gestión de refugios animales desarrollado con **Rust + Anchor** y desplegado en **Solana Devnet**.
 
 ## Descripción
 
-Sistema de gestión de refugio animal onchain. Permite registrar mascotas con información médica y de adopción.
+Proyecto que busca apoyar la gestión de refugios mediante tecnología blockchain. Permite registrar refugios y mascotas, almacenar información relacionada con su salud y controlar su estado de adopción.
 
-## Program ID
+## Program ID — Solana Devnet
 
-`56XMjeUnV1vDsEwuCVZMv5g9NNBjXxkZTfH3DyvCs351`
+`5LKxowtk3ZLgN5ZXQXyu9aD5iNoRBRgHxJeHL1eHAfJP`
 
-## Funciones
+**Consultar programa en Solana Explorer:**
+
+https://explorer.solana.com/address/5LKxowtk3ZLgN5ZXQXyu9aD5iNoRBRgHxJeHL1eHAfJP?cluster=devnet
+
+## Funciones del programa
 
 | Instrucción | Descripción |
 |---|---|
-| `crear_refugio` | Crea el refugio (PDA) |
-| `agregar_mascota` | Registra una mascota con sus datos |
-| `eliminar_mascota` | Elimina una mascota del refugio |
-| `alternar_adopcion` | Cambia el estado de adopción de una mascota |
+| `crear_refugio` | Crea una cuenta de refugio mediante PDA. |
+| `agregar_mascota` | Registra una mascota con sus datos. |
+| `eliminar_mascota` | Elimina el registro de una mascota. |
+| `alternar_adopcion` | Cambia el estado de adopción de una mascota. |
 
-## Campos de Mascota
+## Información de las mascotas
 
-- `nombre` — Nombre de la mascota
-- `edad` — Edad en años
-- `vivo` — Estado de vida
-- `enfermo` — Si está enfermo
-- `necesita_esterilizacion` — Si necesita esterilización
-- `esterilizado` — Si ya fue esterilizado
-- `viejo` — Si es un animal mayor
-- `adoptado` — Si fue adoptado
-- `disponible_adopcion` — Si está disponible para adopción
-- `mucho_tiempo_sin_adopcion` — Si lleva mucho tiempo en el refugio
+El programa contempla información relacionada con:
+
+- Nombre y edad.
+- Estado de salud.
+- Necesidad de esterilización.
+- Condición de animal mayor.
+- Estado de adopción.
+- Tiempo que lleva esperando ser adoptada.
 
 ## Tecnologías
 
@@ -39,9 +41,29 @@ Sistema de gestión de refugio animal onchain. Permite registrar mascotas con in
 - Solana Devnet
 - Solana Playground
 
-## Cómo usar en Solana Playground
+## Cuentas PDA
 
-1. Abre [Solana Playground](https://beta.solpg.io/)
-2. Importa este repositorio
-3. Haz Build y Deploy
-4. Interactúa con las instrucciones desde el panel izquierdo
+El programa utiliza direcciones derivadas de programa (PDA) para organizar las cuentas:
+
+- Refugio: derivado de la dirección del propietario.
+- Mascota: derivada de la cuenta del refugio y el nombre de la mascota.
+
+## Cómo utilizar en Solana Playground
+
+1. Abrir [Solana Playground](https://beta.solpg.io/).
+2. Importar el código del programa.
+3. Seleccionar el entorno Devnet.
+4. Ejecutar Build.
+5. Desplegar el programa.
+6. Interactuar con las instrucciones disponibles.
+
+## Estado del proyecto
+
+- Programa compilado correctamente.
+- Despliegue realizado en Solana Devnet.
+- Program ID actualizado.
+- Código fuente disponible en este repositorio.
+
+## Objetivo
+
+Utilizar herramientas descentralizadas para contribuir a la gestión, protección y adopción responsable de animales en refugios.
